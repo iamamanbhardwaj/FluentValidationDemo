@@ -6,7 +6,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
+{
+    options.InvalidModelStateResponseFactory = c =>
+    {
+        var errors = c.ModelState
+        
+        .Select(s=>new { Key = s.Key, Values = s.Value})
+        .Where(v => v?.Values?.Errors?.Count > 0)
+        .Select(v  => new ErrorsByField { Messages = v.Values?.Errors?.Select(s => s.ErrorMessage), Field =v.Key })?.ToList();
+
+        return new ErrorsByFieldResponses(errors);
+    };
+});
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
